@@ -140,9 +140,10 @@
   border-radius: 20px;
 }
 
-.chipN { background: #e8f5e9; color: #1b5e20; }
-.chipP { background: #fff3e0; color: #e65100; }
-.chipK { background: #e3f2fd; color: #0d47a1; }
+.chipN      { background: #e8f5e9; color: #1b5e20; }
+.chipP      { background: #fff3e0; color: #e65100; }
+.chipK      { background: #e3f2fd; color: #0d47a1; }
+.chipCustom { background: #f3e5f5; color: #6a1b9a; }
 
 .productPrice {
   font-size: 12px;
@@ -424,6 +425,138 @@
 }
 
 .btnCancel:hover { border-color: var(--color-text-muted); }
+
+/* ── Nutrient Dashboard ── */
+.dashSection {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  padding: 12px 20px 14px;
+}
+
+.dashTitle {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.dashScroll {
+  overflow-x: auto;
+}
+
+.dashTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dashTable th {
+  padding: 6px 12px;
+  text-align: right;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary);
+  border-right: 1px solid rgba(255,255,255,0.15);
+}
+
+.dashTable th:first-child {
+  text-align: left;
+  border-radius: 4px 0 0 0;
+}
+.dashTable th:last-child { border-right: none; border-radius: 0 4px 0 0; }
+
+.thN      { background: #2e7d32 !important; }
+.thP      { background: #e65100 !important; }
+.thK      { background: #1565c0 !important; }
+.thCustom { background: #6a1b9a !important; }
+
+.dashTable td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: right;
+  color: var(--color-text);
+}
+
+.dashTable tr:last-child td { border-bottom: none; }
+.dashTable tbody tr:hover { background: rgba(45,74,45,0.04); }
+
+.dashFieldName { text-align: left; font-weight: 500; }
+.tdN      { color: #2e7d32; font-weight: 600; }
+.tdP      { color: #e65100; font-weight: 600; }
+.tdK      { color: #1565c0; font-weight: 600; }
+.tdCustom { color: #6a1b9a; font-weight: 600; }
+.tdCount  { color: var(--color-text-muted); }
+
+/* ── Custom nutrient form ── */
+.customNutrientHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.btnAddNutrient {
+  background: none;
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-primary);
+  font-size: 12px;
+  font-family: var(--font-body);
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnAddNutrient:hover { border-color: var(--color-primary); background: rgba(45,74,45,0.05); }
+
+.nutrientSuggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.suggestionChip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.suggestionChip:hover { border-color: #6a1b9a; color: #6a1b9a; }
+.suggestionChipActive { background: #f3e5f5; border-color: #6a1b9a; color: #6a1b9a; }
+
+.customNutrientList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customNutrientRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.removeNutrientBtn {
+  background: none;
+  border: 1px solid rgba(192,57,43,0.25);
+  border-radius: 4px;
+  color: var(--color-danger);
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.removeNutrientBtn:hover { background: rgba(192,57,43,0.08); }
 
 /* Mobile */
 @media (max-width: 767px) {

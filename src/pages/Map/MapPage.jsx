@@ -12,90 +12,79 @@ const DEFAULT_ZOOM = 13
 
 const VARIETY_COLORS = {
   '猫山王': '#2d8c4e',
-  'D24': '#c8960a',
-  '红虾': '#c0392b',
-  '黑刺': '#8e44ad',
-  '竹脚': '#2980b9',
-  '其他': '#7f8c8d',
+  'D24':    '#c8960a',
+  '红虾':   '#c0392b',
+  '黑刺':   '#8e44ad',
+  '竹脚':   '#2980b9',
+  '其他':   '#7f8c8d',
 }
-
 const VARIETY_OPTIONS = ['猫山王', 'D24', '红虾', '黑刺', '竹脚', '其他']
 
 const TILE_LAYERS = {
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-    label: '卫星图',
-    icon: '🛰️',
+    attribution: 'Tiles &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
+    label: '卫星图', icon: '🛰️',
   },
   street: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    label: '街道图',
-    icon: '🗺️',
+    label: '街道图', icon: '🗺️',
   },
 }
 
 const calculateArea = (latlngs) => {
-  const flat = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs
-  const coords = flat.map(ll => [ll.lng, ll.lat])
+  const coords = latlngs.map(ll => [ll.lng, ll.lat])
   coords.push(coords[0])
-  const polygon = turf.polygon([coords])
-  const areaM2 = turf.area(polygon)
-  return parseFloat((areaM2 / 10000).toFixed(4))
+  const poly = turf.polygon([coords])
+  return parseFloat((turf.area(poly) / 10000).toFixed(4))
 }
 
-// ── Draw toolbar via native leaflet-draw API ──────────────────────────────────
-// Uses a mounted-ref guard so React StrictMode double-invoke doesn't register
-// the event handler twice or leave orphan controls on the map.
+// ── Draw toolbar ──────────────────────────────────────────────────────────────
+// Key fixes vs. previous version:
+//   1. edit: { featureGroup } is required — without it leaflet-draw can't
+//      track drawn shapes, which causes polygon completion to mis-fire at 3pts
+//   2. allowIntersection: true — the false setting silently rejects the 4th+
+//      vertex whenever leaflet-draw's edge-crossing heuristic triggers
+//   3. No StrictMode mounted-guard — the cleanup already removes everything;
+//      the guard was preventing re-init after StrictMode's unmount/remount cycle
 function DrawControl({ onCreated }) {
   const map = useMap()
-  const stateRef = useRef({ mounted: false, drawnItems: null, drawControl: null })
 
   useEffect(() => {
-    const s = stateRef.current
-    if (s.mounted) return   // StrictMode second call — skip
-    s.mounted = true
+    const drawnItems = new L.FeatureGroup()
+    map.addLayer(drawnItems)
 
-    s.drawnItems = new L.FeatureGroup()
-    map.addLayer(s.drawnItems)
-
-    s.drawControl = new L.Control.Draw({
+    const ctrl = new L.Control.Draw({
       position: 'topleft',
       draw: {
-        rectangle: false,
-        circle: false,
-        circlemarker: false,
-        marker: false,
-        polyline: false,
+        rectangle: false, circle: false, circlemarker: false,
+        marker: false, polyline: false,
         polygon: {
-          allowIntersection: false,
+          allowIntersection: true,          // let user draw any shape freely
           showArea: true,
+          drawError: { color: '#e74c3c', timeout: 1000 },
           shapeOptions: {
-            color: '#2d4a2d',
-            fillColor: '#2d4a2d',
-            fillOpacity: 0.2,
-            weight: 2,
+            color: '#2d4a2d', fillColor: '#2d4a2d',
+            fillOpacity: 0.2, weight: 2,
           },
         },
       },
-      edit: false,
+      // featureGroup is mandatory for leaflet-draw internals even when edit/remove are off
+      edit: { featureGroup: drawnItems, edit: false, remove: false },
     })
-    map.addControl(s.drawControl)
+    map.addControl(ctrl)
 
     const handler = (e) => {
-      const layer = e.layer
-      s.drawnItems.addLayer(layer)
-      onCreated(layer, s.drawnItems)
+      drawnItems.addLayer(e.layer)
+      onCreated(e.layer, drawnItems)
     }
     map.on(L.Draw.Event.CREATED, handler)
-    s.handler = handler
 
     return () => {
-      s.mounted = false
-      map.off(L.Draw.Event.CREATED, s.handler)
-      if (s.drawControl) { map.removeControl(s.drawControl); s.drawControl = null }
-      if (s.drawnItems) { map.removeLayer(s.drawnItems); s.drawnItems = null }
+      map.off(L.Draw.Event.CREATED, handler)
+      try { map.removeControl(ctrl) }    catch (_) {}
+      try { map.removeLayer(drawnItems) } catch (_) {}
     }
   }, [map, onCreated])
 
@@ -107,8 +96,8 @@ function FlyToUser({ trigger, onDone }) {
   useEffect(() => {
     if (!trigger) return
     navigator.geolocation.getCurrentPosition(
-      (pos) => { map.flyTo([pos.coords.latitude, pos.coords.longitude], 16); onDone() },
-      () => { toast.error('无法获取位置，请检查浏览器权限'); onDone() }
+      (p) => { map.flyTo([p.coords.latitude, p.coords.longitude], 16); onDone() },
+      ()  => { toast.error('无法获取位置，请检查浏览器权限'); onDone() }
     )
   }, [trigger, map, onDone])
   return null
@@ -118,23 +107,25 @@ const EMPTY_FORM = { name: '', location: '', variety: '猫山王', treeAge: '', 
 
 export default function MapPage() {
   const { user, fields, setFields } = useStore()
-  const [pendingLayer, setPendingLayer]       = useState(null)
+
+  const [pendingLayer,      setPendingLayer]      = useState(null)
   const [pendingLayerGroup, setPendingLayerGroup] = useState(null)
-  const [pendingArea, setPendingArea]         = useState(null)
-  const [pendingBoundary, setPendingBoundary] = useState(null)
-  const [pendingCenter, setPendingCenter]     = useState(null)
-  const [showForm, setShowForm]               = useState(false)
-  const [form, setForm]                       = useState(EMPTY_FORM)
-  const [saving, setSaving]                   = useState(false)
-  const [selectedField, setSelectedField]     = useState(null)
-  const [flyTrigger, setFlyTrigger]           = useState(false)
-  const [tileMode, setTileMode]               = useState('satellite')
+  const [pendingArea,       setPendingArea]       = useState(null)
+  const [pendingBoundary,   setPendingBoundary]   = useState(null)
+  const [pendingCenter,     setPendingCenter]     = useState(null)
+  const [showForm,          setShowForm]          = useState(false)
+  const [form,              setForm]              = useState(EMPTY_FORM)
+  const [saving,            setSaving]            = useState(false)
+  const [selectedField,     setSelectedField]     = useState(null)
+  const [flyTrigger,        setFlyTrigger]        = useState(false)
+  const [tileMode,          setTileMode]          = useState('satellite')
 
   const handleCreated = useCallback((layer, layerGroup) => {
-    const latlngs   = layer.getLatLngs()
-    const geoJson   = layer.toGeoJSON()
-    const area      = calculateArea(latlngs[0])
-    const centroid  = turf.centroid(geoJson)
+    const latlngs  = layer.getLatLngs()
+    const ring     = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs
+    const geoJson  = layer.toGeoJSON()
+    const area     = calculateArea(ring)
+    const centroid = turf.centroid(geoJson)
     const [lng, lat] = centroid.geometry.coordinates
 
     setPendingLayer(layer)
@@ -149,10 +140,8 @@ export default function MapPage() {
   const handleCancelForm = () => {
     setShowForm(false)
     if (pendingLayer && pendingLayerGroup) pendingLayerGroup.removeLayer(pendingLayer)
-    setPendingLayer(null)
-    setPendingLayerGroup(null)
-    setPendingArea(null)
-    setPendingBoundary(null)
+    setPendingLayer(null); setPendingLayerGroup(null)
+    setPendingArea(null);  setPendingBoundary(null)
   }
 
   const handleSave = async (e) => {
@@ -179,8 +168,11 @@ export default function MapPage() {
       setPendingArea(null);  setPendingBoundary(null)
       toast.success('地块已保存')
     } catch (err) {
-      toast.error('保存失败，请重试')
-      console.error(err)
+      console.error('addField error:', err)
+      const msg = err?.code === 'permission-denied'
+        ? '权限不足，请检查 Firestore 安全规则'
+        : `保存失败：${err?.message || '请重试'}`
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -193,7 +185,8 @@ export default function MapPage() {
       setFields(fields.filter(f => f.id !== field.id))
       if (selectedField?.id === field.id) setSelectedField(null)
       toast.success('地块已删除')
-    } catch {
+    } catch (err) {
+      console.error(err)
       toast.error('删除失败，请重试')
     }
   }
@@ -203,7 +196,7 @@ export default function MapPage() {
   return (
     <div className={styles.page}>
 
-      {/* ── Left field list panel ── */}
+      {/* ── Left field list ── */}
       <aside className={styles.panel}>
         <div className={styles.panelHeader}>
           <div className={styles.panelTitle}>地块列表</div>
@@ -223,13 +216,10 @@ export default function MapPage() {
             >
               <div className={styles.fieldCardHeader}>
                 <span className={styles.fieldName}>{f.name}</span>
-                <span
-                  className={styles.fieldBadge}
-                  style={{
-                    background: (VARIETY_COLORS[f.variety] || '#7f8c8d') + '22',
-                    color:       VARIETY_COLORS[f.variety] || '#7f8c8d',
-                  }}
-                >
+                <span className={styles.fieldBadge} style={{
+                  background: (VARIETY_COLORS[f.variety] || '#7f8c8d') + '22',
+                  color: VARIETY_COLORS[f.variety] || '#7f8c8d',
+                }}>
                   {f.variety}
                 </span>
               </div>
@@ -238,10 +228,8 @@ export default function MapPage() {
                 {f.treeCount > 0 && <span className={styles.fieldMetaItem}>🌳 {f.treeCount} 棵</span>}
                 {f.location   && <span className={styles.fieldMetaItem}>📍 {f.location}</span>}
               </div>
-              <button
-                className={styles.deleteBtn}
-                onClick={(e) => { e.stopPropagation(); handleDelete(f) }}
-              >
+              <button className={styles.deleteBtn}
+                onClick={(e) => { e.stopPropagation(); handleDelete(f) }}>
                 删除
               </button>
             </div>
@@ -253,7 +241,6 @@ export default function MapPage() {
       <div className={styles.mapWrapper}>
         <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} className={styles.map}>
           <TileLayer key={tileMode} url={tile.url} attribution={tile.attribution} maxZoom={20} />
-
           <DrawControl onCreated={handleCreated} />
 
           {fields.map(f => {
@@ -264,11 +251,9 @@ export default function MapPage() {
               <Polygon key={f.id} positions={coords}
                 pathOptions={{ color, fillColor: color, fillOpacity: 0.3, weight: 2 }}>
                 <Popup>
-                  <div style={{ fontFamily: 'var(--font-body)', minWidth: '160px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: '#2d4a2d' }}>
-                      {f.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#7a6e5a', lineHeight: '1.8' }}>
+                  <div style={{ fontFamily: 'var(--font-body)', minWidth: 160 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#2d4a2d' }}>{f.name}</div>
+                    <div style={{ fontSize: 12, color: '#7a6e5a', lineHeight: 1.8 }}>
                       <div>品种：{f.variety}</div>
                       <div>面积：{f.areaHa} 公顷</div>
                       {f.treeCount > 0 && <div>棵数：{f.treeCount} 棵</div>}
@@ -286,16 +271,12 @@ export default function MapPage() {
 
         {/* floating controls */}
         <div className={styles.mapControls}>
-          <button className={styles.mapBtn} onClick={() => setFlyTrigger(true)}>
-            📍 我的位置
-          </button>
+          <button className={styles.mapBtn} onClick={() => setFlyTrigger(true)}>📍 我的位置</button>
           <div className={styles.layerToggle}>
             {Object.entries(TILE_LAYERS).map(([key, t]) => (
-              <button
-                key={key}
+              <button key={key}
                 className={`${styles.layerBtn}${tileMode === key ? ' ' + styles.layerBtnActive : ''}`}
-                onClick={() => setTileMode(key)}
-              >
+                onClick={() => setTileMode(key)}>
                 {t.icon} {t.label}
               </button>
             ))}
@@ -303,109 +284,81 @@ export default function MapPage() {
         </div>
 
         {!showForm && (
-          <div className={styles.drawHint}>点击左侧多边形工具绘制地块边界</div>
+          <div className={styles.drawHint}>
+            单击添加顶点 · 双击完成绘制（可绘制任意多边形）
+          </div>
         )}
       </div>
 
-      {/* ── Slide-in save form ── */}
+      {/* ── Save form panel ── */}
       {showForm && (
-        <div
-          className={styles.formOverlay}
-          onClick={(e) => e.target === e.currentTarget && handleCancelForm()}
-        >
+        <div className={styles.formOverlay}
+          onClick={(e) => e.target === e.currentTarget && handleCancelForm()}>
           <div className={styles.formPanel}>
 
-            {/* header — always visible */}
+            {/* fixed header */}
             <div className={styles.formPanelHeader}>
               <div className={styles.formPanelTitle}>保存地块</div>
               <div className={styles.formAreaDisplay}>
-                面积（自动）：<span className={styles.areaValue}>{pendingArea} 公顷</span>
+                面积（自动计算）：<span className={styles.areaValue}>{pendingArea} 公顷</span>
               </div>
             </div>
 
-            {/* scrollable body — form fields only, NO buttons here */}
+            {/* scrollable fields — buttons are NOT here */}
             <div className={styles.formPanelBody}>
               <form id="fieldForm" onSubmit={handleSave}>
                 <div className={styles.formGroup}>
-                  <label className={styles.formLabel}>
-                    地块名称<span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    className={styles.formInput}
+                  <label className={styles.formLabel}>地块名称<span className={styles.required}>*</span></label>
+                  <input className={styles.formInput} autoFocus
                     value={form.name}
                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="例：A区、北坡1号"
-                    autoFocus
-                  />
+                    placeholder="例：A区、北坡1号" />
                 </div>
-
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>地点</label>
-                  <input
-                    className={styles.formInput}
+                  <input className={styles.formInput}
                     value={form.location}
                     onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
-                    placeholder="例：文冬北部"
-                  />
+                    placeholder="例：文冬北部" />
                 </div>
-
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>榴莲品种</label>
-                  <select
-                    className={styles.formSelect}
+                  <select className={styles.formSelect}
                     value={form.variety}
-                    onChange={e => setForm(p => ({ ...p, variety: e.target.value }))}
-                  >
+                    onChange={e => setForm(p => ({ ...p, variety: e.target.value }))}>
                     {VARIETY_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
-
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>树龄（年）</label>
-                    <input
-                      type="number" min="0" max="100"
-                      className={styles.formInput}
+                    <input type="number" min="0" max="100" className={styles.formInput}
                       value={form.treeAge}
                       onChange={e => setForm(p => ({ ...p, treeAge: e.target.value }))}
-                      placeholder="0"
-                    />
+                      placeholder="0" />
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>树木棵数</label>
-                    <input
-                      type="number" min="0"
-                      className={styles.formInput}
+                    <input type="number" min="0" className={styles.formInput}
                       value={form.treeCount}
                       onChange={e => setForm(p => ({ ...p, treeCount: e.target.value }))}
-                      placeholder="0"
-                    />
+                      placeholder="0" />
                   </div>
                 </div>
-
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>备注</label>
-                  <textarea
-                    className={styles.formTextarea}
+                  <textarea className={styles.formTextarea}
                     value={form.notes}
                     onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                    placeholder="其他备注信息..."
-                  />
+                    placeholder="其他备注信息..." />
                 </div>
               </form>
             </div>
 
-            {/* footer — always visible, outside the scroll area */}
+            {/* fixed footer — always visible */}
             <div className={styles.formPanelFooter}>
-              <button type="button" className={styles.btnSecondary} onClick={handleCancelForm}>
-                取消
-              </button>
-              <button
-                type="submit"
-                form="fieldForm"
-                className={styles.btnPrimary}
-                disabled={saving}
-              >
+              <button type="button" className={styles.btnSecondary} onClick={handleCancelForm}>取消</button>
+              <button type="submit" form="fieldForm" className={styles.btnPrimary} disabled={saving}>
                 {saving ? '保存中...' : '保存地块'}
               </button>
             </div>
