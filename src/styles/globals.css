@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+:root {
+  --color-primary: #2d4a2d;
+  --color-primary-light: #3d6e3d;
+  --color-accent: #c8960a;
+  --color-accent-light: #f0c040;
+  --color-bg: #f7f3ec;
+  --color-bg-card: #fdfcf8;
+  --color-border: #e8e0d0;
+  --color-text: #1a1a0e;
+  --color-text-muted: #7a6e5a;
+  --color-sidebar: #2c1f16;
+  --color-danger: #c0392b;
+  --color-success: #27ae60;
+
+  --font-display: 'Noto Serif SC', serif;
+  --font-body: 'Noto Sans SC', sans-serif;
+
+  --radius: 8px;
+  --shadow: 0 2px 8px rgba(44, 31, 22, 0.08);
+  --shadow-md: 0 4px 16px rgba(44, 31, 22, 0.12);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* Leaflet default marker icon fix for Vite */
+.leaflet-default-icon-path {
+  background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
+}
+
+/* Leaflet draw toolbar tweaks */
+.leaflet-draw-toolbar a {
+  background-color: #fff !important;
+  border-radius: 4px !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
