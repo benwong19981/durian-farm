@@ -7,8 +7,8 @@
 
 /* ── Left panel ── */
 .panel {
-  width: 300px;
-  min-width: 300px;
+  width: 280px;
+  min-width: 280px;
   background: var(--color-bg-card);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -28,7 +28,7 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--color-primary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .panelCount {
@@ -52,10 +52,7 @@
   transition: all 0.15s ease;
 }
 
-.fieldCard:hover {
-  border-color: var(--color-primary-light);
-  box-shadow: var(--shadow);
-}
+.fieldCard:hover { border-color: var(--color-primary-light); box-shadow: var(--shadow); }
 
 .fieldCard.selected {
   border-color: var(--color-accent);
@@ -69,56 +66,44 @@
   margin-bottom: 6px;
 }
 
-.fieldName {
-  font-weight: 500;
-  font-size: 13px;
-  color: var(--color-text);
-}
+.fieldName  { font-weight: 500; font-size: 13px; color: var(--color-text); }
 
 .fieldBadge {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 20px;
   font-weight: 500;
+  flex-shrink: 0;
+  margin-left: 6px;
 }
 
 .fieldMeta {
   font-size: 12px;
   color: var(--color-text-muted);
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.fieldMetaItem {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
+.fieldMetaItem { display: flex; align-items: center; gap: 3px; }
 
 .deleteBtn {
+  margin-top: 8px;
   background: none;
   color: var(--color-danger);
   font-size: 12px;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
   border: 1px solid rgba(192, 57, 43, 0.2);
+  cursor: pointer;
   transition: all 0.15s;
-  margin-top: 6px;
+  font-family: var(--font-body);
 }
+.deleteBtn:hover { background: rgba(192, 57, 43, 0.08); }
 
-.deleteBtn:hover {
-  background: rgba(192, 57, 43, 0.08);
-}
-
-.emptyState {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--color-text-muted);
-}
-
-.emptyIcon { font-size: 36px; margin-bottom: 10px; display: block; }
-.emptyText { font-size: 13px; line-height: 1.6; }
+.emptyState { text-align: center; padding: 40px 16px; color: var(--color-text-muted); }
+.emptyIcon  { font-size: 36px; margin-bottom: 10px; display: block; }
+.emptyText  { font-size: 13px; line-height: 1.7; }
 
 /* ── Map container ── */
 .mapWrapper {
@@ -127,12 +112,9 @@
   overflow: hidden;
 }
 
-.map {
-  width: 100%;
-  height: 100%;
-}
+.map { width: 100%; height: 100%; }
 
-/* ── Floating controls ── */
+/* ── Floating controls (top-right) ── */
 .mapControls {
   position: absolute;
   top: 12px;
@@ -141,67 +123,97 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: flex-end;
 }
 
-.locateBtn {
+.mapBtn {
   background: var(--color-bg-card);
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 10px 14px;
+  padding: 8px 14px;
   font-size: 13px;
   font-weight: 500;
+  font-family: var(--font-body);
   color: var(--color-primary);
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+}
+.mapBtn:hover { border-color: var(--color-primary); box-shadow: var(--shadow-md); }
+
+/* layer toggle pill */
+.layerToggle {
+  display: flex;
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
-.locateBtn:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-md);
+.layerBtn {
+  padding: 7px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
+.layerBtn:hover { color: var(--color-primary); background: rgba(45,74,45,0.06); }
+.layerBtn + .layerBtn { border-left: 1px solid var(--color-border); }
+.layerBtnActive { color: var(--color-primary) !important; background: rgba(45,74,45,0.1) !important; font-weight: 600; }
 
-/* ── Draw hint ── */
+/* draw hint banner */
 .drawHint {
   position: absolute;
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(44, 31, 22, 0.88);
+  background: rgba(44, 31, 22, 0.85);
   color: #fff;
-  padding: 8px 16px;
+  padding: 7px 16px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 12px;
+  font-family: var(--font-body);
   z-index: 500;
   pointer-events: none;
   white-space: nowrap;
+  backdrop-filter: blur(4px);
 }
 
-/* ── Slide-in form panel ── */
+/* ── Slide-in save form ── */
 .formOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(26, 26, 14, 0.4);
+  background: rgba(26, 26, 14, 0.45);
   z-index: 600;
   display: flex;
   justify-content: flex-end;
 }
 
+/* The panel is a flex-column: header | scrollable-body | footer */
 .formPanel {
   background: var(--color-bg-card);
   width: 360px;
   max-width: 100%;
   height: 100%;
-  overflow-y: auto;
-  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
   display: flex;
   flex-direction: column;
+  overflow: hidden;          /* panel itself does NOT scroll */
 }
 
+/* header — always visible */
 .formPanelHeader {
-  padding: 20px 24px 16px;
+  padding: 20px 24px 14px;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
   background: var(--color-bg-card);
@@ -214,38 +226,24 @@
   color: var(--color-primary);
 }
 
-.formAreaDisplay {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-}
+.formAreaDisplay { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+.areaValue { font-weight: 600; color: var(--color-accent); }
 
-.areaValue {
-  font-weight: 600;
-  color: var(--color-accent);
-}
-
+/* scrollable body — contains only form fields */
 .formPanelBody {
   flex: 1;
-  padding: 20px 24px;
-  overflow-y: auto;
+  overflow-y: auto;      /* THIS scrolls */
+  padding: 18px 24px 8px;
+  min-height: 0;         /* required for flex children to respect overflow */
 }
 
-.formGroup {
-  margin-bottom: 16px;
-}
+.formGroup   { margin-bottom: 16px; }
+.formLabel   { display: block; font-size: 13px; font-weight: 500; color: var(--color-text); margin-bottom: 6px; }
+.required    { color: var(--color-danger); margin-left: 2px; }
 
-.formLabel {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: 6px;
-}
-
-.required { color: var(--color-danger); margin-left: 2px; }
-
-.formInput, .formSelect, .formTextarea {
+.formInput,
+.formSelect,
+.formTextarea {
   width: 100%;
   padding: 9px 12px;
   border: 1.5px solid var(--color-border);
@@ -253,43 +251,41 @@
   background: var(--color-bg);
   color: var(--color-text);
   font-size: 13px;
+  font-family: var(--font-body);
   transition: border-color 0.15s;
   appearance: none;
+  box-sizing: border-box;
 }
+.formInput:focus,
+.formSelect:focus,
+.formTextarea:focus { outline: none; border-color: var(--color-primary-light); }
+.formTextarea { resize: vertical; min-height: 72px; }
 
-.formInput:focus, .formSelect:focus, .formTextarea:focus {
-  outline: none;
-  border-color: var(--color-primary-light);
-}
+.formRow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-.formTextarea { resize: vertical; min-height: 70px; }
-
-.formRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
+/* footer — always visible, never scrolls away */
 .formPanelFooter {
-  padding: 16px 24px;
+  padding: 14px 24px;
   border-top: 1px solid var(--color-border);
   display: flex;
   gap: 10px;
   flex-shrink: 0;
+  background: var(--color-bg-card);
 }
 
 .btnPrimary {
   flex: 1;
   background: var(--color-primary);
   color: #fff;
-  padding: 10px 16px;
+  padding: 11px 16px;
   border-radius: var(--radius);
   font-size: 14px;
   font-weight: 500;
   font-family: var(--font-body);
+  border: none;
+  cursor: pointer;
   transition: background 0.15s;
 }
-
 .btnPrimary:hover:not(:disabled) { background: var(--color-primary-light); }
 .btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -297,21 +293,18 @@
   background: var(--color-bg);
   color: var(--color-text);
   border: 1.5px solid var(--color-border);
-  padding: 10px 16px;
+  padding: 11px 16px;
   border-radius: var(--radius);
   font-size: 14px;
   font-family: var(--font-body);
+  cursor: pointer;
   transition: all 0.15s;
 }
-
 .btnSecondary:hover { border-color: var(--color-text-muted); }
 
-/* Mobile */
+/* ── Mobile ── */
 @media (max-width: 767px) {
-  .panel {
-    display: none;
-  }
-  .formPanel {
-    width: 100%;
-  }
+  .panel { display: none; }
+  .formPanel { width: 100%; }
+  .drawHint { font-size: 11px; left: 8px; right: 8px; transform: none; text-align: center; }
 }
